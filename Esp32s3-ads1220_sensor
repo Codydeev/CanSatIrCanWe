@@ -1,0 +1,51 @@
+// made in Arduino IDE with c++
+
+#include <SPI.h>
+#include <ADS1220.
+
+ads1220::ADS1220 ads;
+static constexpr uint8_t PIN_CS = 7;
+static constexpr uint8_t PIN_DRDY = 6;
+static constexpr float R_REF_OHMS= 2400;
+static constexpr float VREF = 2.048;
+
+void setup() {
+  Serial.begin(115200);
+  delay(5000);
+  Serial.println("Starta ads1220");
+
+  pinMode(7, OUTPUT);
+  digitalWrite(7, HIGH);
+
+  SPI.begin(8, 9, 10, 7);
+  SPISettings spi_settings(1000000, MSBFIRST, SPI_MODE1);
+  ads.begin(SPI, 7, 6, spi_settings);
+
+using namespace ads1220::config;
+ads.write_config_pga_bypass(pga_bypass::DISABLE);
+ads.write_config_pga_gain(gain::GAIN_8);
+ads.write_config_input_multiplexer(mux::AIN1_AIN0);
+ads.write_config_conversion_mode(conversion_mode::CONTINUOUS);
+ads.write_config_data_rate_normal(data_rate::NORMAL_600_SPS);
+ads.write_config_operating_mode(mode::NORMAL);
+ads.write_config_vref_selection(vref::INTERNAL_2_048_V);
+
+ads.print_config_registers();
+}
+
+void loop() {
+  int32_t raw = ads.read();
+  Serial.print("Read data: 0x");
+  Serial.println(raw, HEX);
+
+  float gain = ads.get_config_pga_gain_value();
+  float voltage = (float)raw * VREF / (gain * 0x7FFFFF);
+
+  Serial.print("Raw ADC: ");
+  Serial.print(raw);
+  Serial.print ("[] Voltage:");
+  Serial.println(voltage, 6);
+  
+
+  delay(100);
+}
