@@ -1,51 +1,37 @@
 // made in Arduino IDE with c++
+// file may appear wrong as code has been copy pasted into this file from IDE
 
 #include <SPI.h>
-#include <ADS1220.
+#include <ADS1220_WE.h>
 
-ads1220::ADS1220 ads;
-static constexpr uint8_t PIN_CS = 7;
-static constexpr uint8_t PIN_DRDY = 6;
-static constexpr float R_REF_OHMS= 2400;
-static constexpr float VREF = 2.048;
+#define ADS1220_CS_PIN 7
+#define ADS1220_DRDY_PIN 6
 
+ADS1220_WE ads = ADS1220_WE(&SPI, ADS1220_CS_PIN, ADS1220_DRDY_PIN,10, 9, 8);
+// ADS1220_WE ads = ADS1220_WE(&SPI, ADS1220_CS_PIN, ADS1220_DRDY_PIN, YOUR_MOSI, YOUR_MISO, YOUR_SCLK);
 void setup() {
+  // put your setup code here, to run once:
+  SPI.begin(8, 9, 10,7);
+  SPISETTINGS settings(1000000, MSBFIRST, SPI_MODE1);
   Serial.begin(115200);
-  delay(5000);
-  Serial.println("Starta ads1220");
-
-  pinMode(7, OUTPUT);
-  digitalWrite(7, HIGH);
-
-  SPI.begin(8, 9, 10, 7);
-  SPISettings spi_settings(1000000, MSBFIRST, SPI_MODE1);
-  ads.begin(SPI, 7, 6, spi_settings);
-
-using namespace ads1220::config;
-ads.write_config_pga_bypass(pga_bypass::DISABLE);
-ads.write_config_pga_gain(gain::GAIN_8);
-ads.write_config_input_multiplexer(mux::AIN1_AIN0);
-ads.write_config_conversion_mode(conversion_mode::CONTINUOUS);
-ads.write_config_data_rate_normal(data_rate::NORMAL_600_SPS);
-ads.write_config_operating_mode(mode::NORMAL);
-ads.write_config_vref_selection(vref::INTERNAL_2_048_V);
-
-ads.print_config_registers();
-}
+  Serial.print("hej1");
+  ads.bypassPGA(true);
+  Serial.print("ADS1220 setup färdig");
+  delay(10000);
+}  
 
 void loop() {
-  int32_t raw = ads.read();
-  Serial.print("Read data: 0x");
-  Serial.println(raw, HEX);
+  // put your main code here, to run repeatedly:
+  float result = 0.0;
+  long longresult = 0;
 
-  float gain = ads.get_config_pga_gain_value();
-  float voltage = (float)raw * VREF / (gain * 0x7FFFFF);
+  ads.setCompareChannels(ADS1220_MUX_0_1);
+  result = ads.getVoltage_mV();
+  longresult = ads.getRawData();
+  Serial.print("AIN0 vs. AIN1   ");
+  Serial.println(result);
+  Serial.print("AIN0 vs. AIN1   ");
+  Serial.println(longresult);
 
-  Serial.print("Raw ADC: ");
-  Serial.print(raw);
-  Serial.print ("[] Voltage:");
-  Serial.println(voltage, 6);
-  
-
-  delay(100);
+  delay(20);
 }
